@@ -5,7 +5,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"index": "tsc && node dist/index.js"
+		"index": "tsc && node dist/index.js",
+		"watchTransfer": "tsc && node dist/watchTransfer.js"
 	},
 	"keywords": [],
 	"author": "",
