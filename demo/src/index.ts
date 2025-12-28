@@ -12,8 +12,8 @@ import { foundry } from 'viem/chains'
 import dotenv from 'dotenv'
 import { privateKeyToAccount } from 'viem/accounts'
 
-import ERC20_ABI from './abis/MyToken.json' with { type: 'json' }
-import COUNTER_ABI from './abis/Counter.json' with { type: 'json' }
+import { ERC20_ABI } from './abis/MyToken.js'
+import { COUNTER_ABI } from './abis/Counter.js'
 
 dotenv.config()
 const ERC20_ADDRESS = '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9'
@@ -41,8 +41,8 @@ const main = async () => {
 		transport: http(process.env.RPC_URL!),
 	}).extend(publicActions)
 
-	const userAddress = await walletClient.getAddresses()
-	console.log(`The wallet address is: ${userAddress[0]}`)
+	const userAddress = (await walletClient.getAddresses())[0] as `0x${string}`
+	console.log(`The wallet address is: ${userAddress}`)
 
 	const hash1 = await walletClient.sendTransaction({
 		account,
@@ -62,9 +62,9 @@ const main = async () => {
 
 	// read contract
 	const balance1 = formatEther(
-		(await erc20Contract.read?.balanceOf?.([userAddress[0]])) as bigint,
+		(await erc20Contract.read.balanceOf([userAddress])) as bigint,
 	)
-	console.log(`address ${userAddress[0]} has token balance: ${balance1}`)
+	console.log(`address ${userAddress} has token balance: ${balance1}`)
 
 	// read contract2
 	const balance2 = formatEther(
@@ -72,10 +72,10 @@ const main = async () => {
 			address: ERC20_ADDRESS,
 			abi: ERC20_ABI,
 			functionName: 'balanceOf',
-			args: [userAddress[0]],
+			args: [userAddress],
 		})) as bigint,
 	)
-	console.log(`address ${userAddress[0]} has token balance: ${balance2}`)
+	console.log(`address ${userAddress} has token balance: ${balance2}`)
 
 	const counterContract = getContract({
 		address: COUNTER_ADDRESS,
@@ -86,7 +86,7 @@ const main = async () => {
 		},
 	})
 
-	const tx = await counterContract.write?.increment?.()
+	const tx = await counterContract.write.increment()
 	console.log('Counter increment tx hash:', tx)
 
 	const receipt = await publicClient.waitForTransactionReceipt({
@@ -94,7 +94,7 @@ const main = async () => {
 	})
 	// console.log('Transaction receipt:', receipt)
 
-	const number1 = await counterContract.read?.number?.()
+	const number1 = await counterContract.read.number()
 	console.log('Counter number after increment:', number1)
 
 	// write contract2
@@ -113,7 +113,7 @@ const main = async () => {
 	})
 	console.log('Counter number after increment:', number2)
 
-	const tx2 = await erc20Contract.write?.transfer?.([
+	const tx2 = await erc20Contract.write.transfer([
 		'0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
 		parseEther('10'),
 	])
@@ -127,7 +127,12 @@ const main = async () => {
 		eventName: 'Transfer',
 		logs: receipt2.logs,
 	})
-	console.log('Parsed Transfer event logs:', transferLogs)
+	// console.log('Parsed Transfer event logs:', transferLogs)
+	for (const log of transferLogs) {
+		console.log('transfer from:', log.args.from)
+		console.log('transfer to:', log.args.to)
+		console.log('transfer amount:', formatEther(log.args.value as bigint))
+	}
 }
 
 main()

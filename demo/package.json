@@ -5,7 +5,7 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"index": "ts-node src/index.ts"
+		"index": "tsc && node dist/index.js"
 	},
 	"keywords": [],
 	"author": "",
