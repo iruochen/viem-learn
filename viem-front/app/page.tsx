@@ -11,6 +11,7 @@ import {
 	useBalance,
 	useReadContract,
 	useWriteContract,
+	useWaitForTransactionReceipt,
 } from "wagmi"
 import { injected } from "wagmi/connectors"
 import { formatUnits } from "viem"
@@ -42,7 +43,14 @@ export default function Home() {
 		isSuccess,
 		isError,
 		error,
+		reset,
 	} = useWriteContract()
+
+	const { isPending: isMining, isSuccess: isConfirmed } =
+		useWaitForTransactionReceipt({
+			hash,
+			query: { enabled: !!hash },
+		})
 
 	const handleIncrement = () => {
 		writeContract({
@@ -53,10 +61,12 @@ export default function Home() {
 	}
 
 	useEffect(() => {
-		if (isSuccess) {
+		console.log(`isMining: ${isMining}, isConfirmed: ${isConfirmed}`)
+		if (isConfirmed) {
 			refetchCounter()
+			reset()
 		}
-	}, [isSuccess, refetchCounter])
+	}, [isConfirmed, refetchCounter, reset])
 
 	return (
 		<div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4 sm:p-8">
@@ -180,16 +190,16 @@ export default function Home() {
 								<div className="flex flex-col sm:flex-row gap-3">
 									<button
 										onClick={handleIncrement}
-										disabled={isPending}
+										disabled={isPending || (!!hash && isMining)}
 										className="group relative flex-1 text-base sm:text-lg font-bold text-white bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 py-4 px-6 rounded-2xl shadow-lg hover:shadow-2xl transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-lg overflow-hidden"
 									>
 										<span
-											className={`relative z-10 flex items-center justify-center gap-2 ${isPending ? "opacity-0" : "opacity-100"}`}
+											className={`relative z-10 flex items-center justify-center gap-2 ${isPending || (!!hash && isMining) ? "opacity-0" : "opacity-100"}`}
 										>
 											<span>➕</span>
 											<span>增加计数</span>
 										</span>
-										{isPending && (
+										{(isPending || (!!hash && isMining)) && (
 											<span className="absolute inset-0 flex items-center justify-center text-white font-bold">
 												<span className="animate-pulse">⏳ 交易进行中...</span>
 											</span>
